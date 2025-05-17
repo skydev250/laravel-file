@@ -1,0 +1,1269 @@
+// node.js for backend and frontent react.js 
+
+|src
+//App.js
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import Dashboard from "./components/Dashboard";
+
+import PostForm from "./components/PostForm";
+import PostDisplay from "./components/PostDisplay";
+import PostEdit from "./components/PostEdit";
+
+import CandidateForm from "./components/CandidateForm";
+import CandidateDisplay from "./components/CandidateDisplay";
+import CandidateEdit from "./components/CandidateEdit";
+
+import Report from "./components/Report";
+import Logout from "./components/Logout";
+
+function App() {
+  return (
+    <Router>
+      <Routes>
+        {/* Auth Routes */}
+        <Route path="/Login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* Post CRUD */}
+        <Route path="/add-post" element={<PostForm />} />
+        <Route path="/view-posts" element={<PostDisplay />} />
+        <Route path="/edit-post/:id" element={<PostEdit />} />
+
+        {/* Candidate CRUD */}
+        <Route path="/add-candidate" element={<CandidateForm />} />
+        <Route path="/view-candidates" element={<CandidateDisplay />} />
+        <Route path="/edit-candidate/:id" element={<CandidateEdit />} />
+        <Route path="/logout" element={<Logout />} />
+
+        {/* Report */}
+        <Route path="/report" element={<Report />} />
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;
+
+//candidatedisplay.js
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+
+function CandidateDisplay() {
+  const [candidates, setCandidates] = useState([]);
+
+  const fetchCandidates = async () => {
+    const res = await axios.get("http://localhost:5000/api/candidates");
+    setCandidates(res.data);
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure to delete this candidate?")) {
+      await axios.delete(`http://localhost:5000/api/candidates/${id}`);
+      fetchCandidates();
+    }
+  };
+
+  useEffect(() => {
+    fetchCandidates();
+  }, []);
+
+  return (
+    <div className="overflow-x-auto max-w-7xl mx-auto mt-10 bg-white shadow-lg rounded-lg p-6">
+      <h2 className="text-xl font-bold text-blue-600 mb-4">📋 Candidates List</h2>
+      <table className="min-w-full table-auto border border-gray-300">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="px-4 py-2 border">National ID</th>
+            <th className="px-4 py-2 border">Name</th>
+            <th className="px-4 py-2 border">Gender</th>
+            <th className="px-4 py-2 border">DOB</th>
+            <th className="px-4 py-2 border">Post ID</th>
+            <th className="px-4 py-2 border">Exam Date</th>
+            <th className="px-4 py-2 border">Phone</th>
+            <th className="px-4 py-2 border">Marks</th>
+            <th className="px-4 py-2 border">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {candidates.map((c) => (
+            <tr key={c.CandidateNationalId} className="text-center">
+              <td className="border px-2 py-1">{c.CandidateNationalId}</td>
+              <td className="border px-2 py-1">{c.FirstName} {c.LastName}</td>
+              <td className="border px-2 py-1">{c.Gender}</td>
+              <td className="border px-2 py-1">{c.DateOfBirth}</td>
+              <td className="border px-2 py-1">{c.PostId}</td>
+              <td className="border px-2 py-1">{c.ExamDate}</td>
+              <td className="border px-2 py-1">{c.PhoneNumber}</td>
+              <td className="border px-2 py-1">{c.Marks}</td>
+              <td className="border px-2 py-1 space-x-2">
+                <Link
+                  to={`/edit-candidate/${c.CandidateNationalId}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={() => handleDelete(c.CandidateNationalId)}
+                  className="text-red-600 hover:underline"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default CandidateDisplay;
+
+//candidataform.js
+
+import { useState, useEffect } from "react";
+import axios from "axios";
+
+function CandidateForm() {
+  const [formData, setFormData] = useState({
+    CandidateNationalId: "",
+    FirstName: "",
+    LastName: "",
+    Gender: "",
+    DateOfBirth: "",
+    PostId: "",
+    ExamDate: "",
+    PhoneNumber: "",
+    Marks: "",
+  });
+
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    axios.get("http://localhost:5000/api/posts").then((res) => {
+      setPosts(res.data);
+    });
+  }, []);
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post("http://localhost:5000/api/candidates", formData);
+      alert("Candidate added successfully!");
+      setFormData({
+        CandidateNationalId: "",
+        FirstName: "",
+        LastName: "",
+        Gender: "",
+        DateOfBirth: "",
+        PostId: "",
+        ExamDate: "",
+        PhoneNumber: "",
+        Marks: "",
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add candidate.");
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto mt-10 bg-white shadow-lg rounded-lg p-6">
+      <h2 className="text-xl font-bold text-blue-600 mb-4">📝 Add Candidate</h2>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[
+          ["CandidateNationalId", "National ID"],
+          ["FirstName", "First Name"],
+          ["LastName", "Last Name"],
+          ["Gender", "Gender"],
+          ["DateOfBirth", "Date of Birth"],
+          ["ExamDate", "Exam Date"],
+          ["PhoneNumber", "Phone Number"],
+          ["Marks", "Marks"],
+        ].map(([key, label]) => (
+          <input
+            key={key}
+            type={key === "DateOfBirth" || key === "ExamDate" ? "date" : "text"}
+            name={key}
+            value={formData[key]}
+            onChange={handleChange}
+            placeholder={label}
+            required
+            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        ))}
+        <select
+          name="PostId"
+          value={formData.PostId}
+          onChange={handleChange}
+          className="col-span-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          required
+        >
+          <option value="">Select Post</option>
+          {posts.map((post) => (
+            <option key={post.PostId} value={post.PostId}>
+              {post.PostName}
+            </option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="col-span-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+        >
+          Add Candidate
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export default CandidateForm;
+
+//cadidateedit.js
+
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
+
+function CandidateEdit() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    FirstName: "",
+    LastName: "",
+    Gender: "",
+    DateOfBirth: "",
+    PostId: "",
+    ExamDate: "",
+    PhoneNumber: "",
+    Marks: "",
+  });
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    axios.get("http://localhost:5000/api/posts").then((res) => {
+      setPosts(res.data);
+    });
+
+    axios.get(`http://localhost:5000/api/candidates/${id}`).then((res) => {
+      setFormData(res.data);
+    });
+  }, [id]);
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await axios.put(`http://localhost:5000/api/candidates/${id}`, formData);
+    alert("Candidate updated!");
+    navigate("/view-candidates");
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto mt-10 bg-white shadow-lg rounded-lg p-6">
+      <h2 className="text-xl font-bold text-green-600 mb-4">✏️ Edit Candidate</h2>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[
+          ["FirstName", "First Name"],
+          ["LastName", "Last Name"],
+          ["Gender", "Gender"],
+          ["DateOfBirth", "Date of Birth"],
+          ["ExamDate", "Exam Date"],
+          ["PhoneNumber", "Phone Number"],
+          ["Marks", "Marks"],
+        ].map(([key, label]) => (
+          <input
+            key={key}
+            type={key === "DateOfBirth" || key === "ExamDate" ? "date" : "text"}
+            name={key}
+            value={formData[key]}
+            onChange={handleChange}
+            placeholder={label}
+            required
+            className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+          />
+        ))}
+        <select
+          name="PostId"
+          value={formData.PostId}
+          onChange={handleChange}
+          className="col-span-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+          required
+        >
+          <option value="">Select Post</option>
+          {posts.map((post) => (
+            <option key={post.PostId} value={post.PostId}>
+              {post.PostName}
+            </option>
+          ))}
+        </select>
+        <button
+          type="submit"
+          className="col-span-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
+        >
+          Update Candidate
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export default CandidateEdit;
+
+//postfrom.js
+
+import { useState } from "react";
+import axios from "axios";
+
+function PostForm() {
+  const [postName, setPostName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null); // success or error message
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage(null);
+
+    try {
+      const res = await axios.post("http://localhost:5000/api/posts", { postName });
+      if (res.status === 201) {
+        setMessage({ type: "success", text: "Post added successfully!" });
+        setPostName("");
+      } else {
+        setMessage({ type: "error", text: "Failed to add post. Please try again." });
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "error", text: "Failed to add post. Please try again." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto mt-10 bg-white shadow-md rounded-lg p-6">
+      <h2 className="text-xl font-bold text-blue-600 mb-4">➕ Add New Post</h2>
+      {message && (
+        <div
+          className={`mb-4 px-4 py-3 rounded ${
+            message.type === "success" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="text"
+          placeholder="Enter Post Name"
+          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+          value={postName}
+          onChange={(e) => setPostName(e.target.value)}
+          required
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full py-2 rounded-lg text-white transition ${
+            loading
+              ? "bg-blue-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+        >
+          {loading ? "Adding..." : "Add Post"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export default PostForm;
+
+//postedit.js
+
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
+
+function PostEdit() {
+  const { id } = useParams();
+  const [postName, setPostName] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    axios.get(`http://localhost:5000/api/posts/${id}`).then((res) => {
+      setPostName(res.data.PostName);
+    });
+  }, [id]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`http://localhost:5000/api/posts/${id}`, { postName });
+      alert("Post updated successfully!");
+      navigate("/view-posts");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update post.");
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto mt-10 bg-white shadow-md rounded-lg p-6">
+      <h2 className="text-xl font-bold text-green-600 mb-4">✏️ Edit Post</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="text"
+          placeholder="Edit Post Name"
+          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+          value={postName}
+          onChange={(e) => setPostName(e.target.value)}
+          required
+        />
+        <button
+          type="submit"
+          className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
+        >
+          Update Post
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export default PostEdit;
+
+//postdisplay.js
+
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+
+function PostDisplay() {
+  const [posts, setPosts] = useState([]);
+
+  const fetchPosts = async () => {
+    const res = await axios.get("http://localhost:5000/api/posts");
+    setPosts(res.data);
+  };
+
+  const handleDelete = async (postId) => {
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      await axios.delete(`http://localhost:5000/api/posts/${postId}`);
+      fetchPosts();
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  return (
+    <div className="max-w-4xl mx-auto mt-10 bg-white shadow-md rounded-lg p-6">
+      <h2 className="text-xl font-bold text-blue-600 mb-4">📄 All Posts</h2>
+      <table className="w-full table-auto border border-gray-300">
+        <thead className="bg-gray-200">
+          <tr>
+            <th className="px-4 py-2 border">Post ID</th>
+            <th className="px-4 py-2 border">Post Name</th>
+            <th className="px-4 py-2 border">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {posts.map((post) => (
+            <tr key={post.PostId} className="text-center">
+              <td className="border px-4 py-2">{post.PostId}</td>
+              <td className="border px-4 py-2">{post.PostName}</td>
+              <td className="border px-4 py-2 space-x-2">
+                <Link
+                  to={`/edit-post/${post.PostId}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={() => handleDelete(post.PostId)}
+                  className="text-red-600 hover:underline"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default PostDisplay;
+
+//register.js
+import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+function Register() {
+  const [formData, setFormData] = useState({ username: "", password: "" });
+  const navigate = useNavigate();
+  const [message, setMessage] = useState("");
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post("http://localhost:5000/api/auth/register", formData);
+      setMessage("Registration successful! Redirecting to login...");
+      setTimeout(() => navigate("/login"), 2000);
+    } catch (err) {
+      setMessage("Registration failed.");
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-100 to-white">
+      <div className="bg-white shadow-xl rounded-xl p-10 w-full max-w-md">
+        <h2 className="text-3xl font-extrabold text-center text-green-700 mb-6">📝 Register</h2>
+        {message && <p className="text-center text-green-600 mb-4">{message}</p>}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <input
+            type="text"
+            name="username"
+            placeholder="Username"
+            onChange={handleChange}
+            value={formData.username}
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            onChange={handleChange}
+            value={formData.password}
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+            required
+          />
+          <button
+            type="submit"
+            className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition"
+          >
+            Register
+          </button>
+        </form>
+        <p className="text-sm text-center mt-4">
+          Already have an account?{" "}
+          <a href="/login" className="text-green-600 hover:underline">
+            Login
+          </a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default Register;
+
+//login.js
+
+import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+function Login() {
+  const [formData, setFormData] = useState({ username: "", password: "" });
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/login", formData, { withCredentials: true });
+      if (res.data.message === "Login successful.") {
+        navigate("/dashboard");
+      } else {
+        setError("Invalid username or password.");
+      }
+    } catch (err) {
+      setError("Login failed. Please try again.");
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-white">
+      <div className="bg-white shadow-xl rounded-xl p-10 w-full max-w-md">
+        <h2 className="text-3xl font-extrabold text-center text-blue-700 mb-6">🔐 Login to XY</h2>
+        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <input
+            type="text"
+            name="username"
+            placeholder="Username"
+            onChange={handleChange}
+            value={formData.username}
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            required
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            onChange={handleChange}
+            value={formData.password}
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            required
+          />
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            Login
+          </button>
+        </form>
+        <p className="text-sm text-center mt-4">
+          Don’t have an account? <a href="/register" className="text-blue-600 hover:underline">Register</a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default Login;
+
+//logout.js
+
+import { useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+function Logout() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const logoutUser = async () => {
+      try {
+        await axios.post("http://localhost:5000/api/auth/logout", {}, { withCredentials: true });
+        navigate("/login");
+      } catch (err) {
+        console.error("Logout failed:", err);
+        navigate("/login");
+      }
+    };
+
+    logoutUser();
+  }, [navigate]);
+
+  return (
+    <div className="flex items-center justify-center h-screen bg-gray-100">
+      <p className="text-lg font-semibold text-gray-700">Logging out...</p>
+    </div>
+  );
+}
+
+export default Logout;
+
+//report.js
+import { useEffect, useState } from "react";
+import axios from "axios";
+
+function Report() {
+  const [candidates, setCandidates] = useState([]);
+
+  useEffect(() => {
+    const fetchReport = async () => {
+      const res = await axios.get("http://localhost:5000/api/candidates/report");
+      setCandidates(res.data);
+    };
+    fetchReport();
+  }, []);
+
+  return (
+    <div className="max-w-7xl mx-auto mt-10 bg-white shadow-xl rounded-xl p-8">
+      <h1 className="text-2xl font-bold text-center text-indigo-700 mb-6">
+        📊 Candidate Examination Report
+      </h1>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-300 shadow-sm">
+          <thead className="bg-indigo-100">
+            <tr>
+              <th className="px-4 py-2 border">#</th>
+              <th className="px-4 py-2 border">National ID</th>
+              <th className="px-4 py-2 border">Name</th>
+              <th className="px-4 py-2 border">Gender</th>
+              <th className="px-4 py-2 border">Date of Birth</th>
+              <th className="px-4 py-2 border">Phone</th>
+              <th className="px-4 py-2 border">Post ID</th>
+              <th className="px-4 py-2 border">Exam Date</th>
+              <th className="px-4 py-2 border">Marks</th>
+            </tr>
+          </thead>
+          <tbody>
+            {candidates.map((c, index) => (
+              <tr
+                key={c.CandidateNationalId}
+                className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+              >
+                <td className="border px-2 py-1 text-center">{index + 1}</td>
+                <td className="border px-2 py-1 text-center">{c.CandidateNationalId}</td>
+                <td className="border px-2 py-1 text-center">
+                  {c.FirstName} {c.LastName}
+                </td>
+                <td className="border px-2 py-1 text-center">{c.Gender}</td>
+                <td className="border px-2 py-1 text-center">{c.DateOfBirth}</td>
+                <td className="border px-2 py-1 text-center">{c.PhoneNumber}</td>
+                <td className="border px-2 py-1 text-center">{c.PostId}</td>
+                <td className="border px-2 py-1 text-center">{c.ExamDate}</td>
+                <td className="border px-2 py-1 text-center font-bold text-indigo-700">
+                  {c.Marks}
+                </td>
+              </tr>
+            ))}
+            {candidates.length === 0 && (
+              <tr>
+                <td colSpan="9" className="text-center py-4 text-gray-500">
+                  No candidate results available.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+export default Report;
+
+
+//backend 
+
+//server.js
+
+const express = require("express");
+const session = require("express-session");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const authRoutes = require("./routes/authRoutes");
+const postRoutes = require("./routes/postRoutes");
+const candidateRoutes = require("./routes/candidateRoutes");
+const MySQLStore = require("express-mysql-session")(session);
+const db = require("./db");
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// MySQL Session Store config (optional but recommended for persistence)
+const sessionStore = new MySQLStore({}, db.promise());
+
+// Middleware
+app.use(cors({
+  origin: "http://localhost:3000", // React frontend URL
+  credentials: true,
+}));
+app.use(bodyParser.json());
+
+// Session middleware
+app.use(
+  session({
+    key: "user_sid",
+    secret: "your_secret_key_here",
+    resave: false,
+    saveUninitialized: false,
+    store: sessionStore,
+    cookie: {
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+      httpOnly: true,
+      secure: false, // set true if using HTTPS
+    },
+  })
+);
+
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api/candidates", candidateRoutes);
+
+// Test route
+app.get("/", (req, res) => {
+  res.send("✅ XY Company Recruitment System API is running.");
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+});
+
+//db.js
+
+const mysql = require('mysql2');
+
+const db = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: '',
+  database: 'company'
+});
+
+db.connect(err => {
+  if (err) throw err;
+  console.log('Database connected!');
+});
+
+module.exports = db;
+
+//controllers
+
+//authController.js
+
+const bcrypt = require("bcrypt");
+const db = require("../db");
+
+exports.register = async (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: "Fill all fields" });
+
+  try {
+    const [user] = await db.promise().execute("SELECT * FROM Users WHERE UserName = ?", [username]);
+    if (user.length > 0) return res.status(409).json({ error: "User exists" });
+
+    const hashed = await bcrypt.hash(password, 10);
+    await db.promise().execute("INSERT INTO Users (UserName, Password) VALUES (?, ?)", [username, hashed]);
+    res.status(201).json({ message: "Registration successful." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error registering user" });
+  }
+};
+
+exports.login = async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const [users] = await db.promise().execute("SELECT * FROM Users WHERE UserName = ?", [username]);
+    if (users.length === 0) return res.status(401).json({ message: "Invalid credentials" });
+
+    const match = await bcrypt.compare(password, users[0].Password);
+    if (!match) return res.status(401).json({ message: "Invalid credentials" });
+
+    req.session.userId = users[0].UserId;
+    res.json({ message: "Login successful." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Login failed." });
+  }
+};
+
+exports.getSession = (req, res) => {
+  if (req.session.userId) {
+    res.json({ loggedIn: true });
+  } else {
+    res.json({ loggedIn: false });
+  }
+};
+
+exports.logout = (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie("connect.sid");
+    res.json({ message: "Logged out" });
+  });
+};
+
+
+//postcontroller.js
+
+const db = require("../db");
+
+// Create new post
+exports.createPost = async (req, res) => {
+  const { PostName } = req.body;
+
+  if (!PostName) {
+    return res.status(400).json({ error: "PostName is required." });
+  }
+
+  try {
+    const [result] = await db.execute(
+      "INSERT INTO post (PostName) VALUES (?)",
+      [PostName]
+    );
+
+    res.status(201).json({ message: "Post created successfully.", PostId: result.insertId });
+  } catch (error) {
+    console.error("Create Post Error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+// Get all posts
+exports.getAllPosts = async (req, res) => {
+  try {
+    const [posts] = await db.execute("SELECT * FROM post ORDER BY PostId DESC");
+    res.json(posts);
+  } catch (error) {
+    console.error("Get Posts Error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+// Get single post by ID
+exports.getPostById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [posts] = await db.execute("SELECT * FROM post WHERE PostId = ?", [id]);
+
+    if (posts.length === 0) {
+      return res.status(404).json({ error: "Post not found." });
+    }
+
+    res.json(posts[0]);
+  } catch (error) {
+    console.error("Get Post Error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+// Update post by ID
+exports.updatePost = async (req, res) => {
+  const { id } = req.params;
+  const { PostName } = req.body;
+
+  if (!PostName) {
+    return res.status(400).json({ error: "PostName is required." });
+  }
+
+  try {
+    const [result] = await db.execute(
+      "UPDATE post SET PostName = ? WHERE PostId = ?",
+      [PostName, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Post not found." });
+    }
+
+    res.json({ message: "Post updated successfully." });
+  } catch (error) {
+    console.error("Update Post Error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+// Delete post by ID
+exports.deletePost = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [result] = await db.execute("DELETE FROM Post WHERE PostId = ?", [id]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Post not found." });
+    }
+
+    res.json({ message: "Post deleted successfully." });
+  } catch (error) {
+    console.error("Delete Post Error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+//candidatecontoller.js
+
+const db = require("../db");
+
+// Create a new candidate result
+exports.createCandidate = async (req, res) => {
+  const {
+    CandidateNationalId,
+    FirstName,
+    LastName,
+    Gender,
+    DateOfBirth,
+    PostId,
+    ExamDate,
+    PhoneNumber,
+    Marks,
+  } = req.body;
+
+  // Basic validation
+  if (
+    !CandidateNationalId ||
+    !FirstName ||
+    !LastName ||
+    !Gender ||
+    !DateOfBirth ||
+    !PostId ||
+    !ExamDate ||
+    !PhoneNumber ||
+    Marks === undefined
+  ) {
+    return res.status(400).json({ error: "Please provide all required fields." });
+  }
+
+  try {
+    // Insert candidate result
+    await db.execute(
+      `INSERT INTO CandidatesResult
+        (CandidateNationalId, FirstName, LastName, Gender, DateOfBirth, PostId, ExamDate, PhoneNumber, Marks)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        CandidateNationalId,
+        FirstName,
+        LastName,
+        Gender,
+        DateOfBirth,
+        PostId,
+        ExamDate,
+        PhoneNumber,
+        Marks,
+      ]
+    );
+
+    res.status(201).json({ message: "Candidate result added successfully." });
+  } catch (error) {
+    console.error("Create Candidate Error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+// Get all candidates sorted by Marks descending
+exports.getAllCandidates = async (req, res) => {
+  try {
+    const [candidates] = await db.execute(
+      `SELECT cr.*, p.PostName
+       FROM CandidatesResult cr
+       LEFT JOIN Post p ON cr.PostId = p.PostId
+       ORDER BY cr.Marks DESC`
+    );
+    res.json(candidates);
+  } catch (error) {
+    console.error("Get Candidates Error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+// Get single candidate by CandidateNationalId
+exports.getCandidateById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [candidates] = await db.execute(
+      `SELECT cr.*, p.PostName
+       FROM CandidatesResult cr
+       LEFT JOIN Post p ON cr.PostId = p.PostId
+       WHERE CandidateNationalId = ?`,
+      [id]
+    );
+
+    if (candidates.length === 0) {
+      return res.status(404).json({ error: "Candidate not found." });
+    }
+
+    res.json(candidates[0]);
+  } catch (error) {
+    console.error("Get Candidate Error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+// Update candidate by CandidateNationalId
+exports.updateCandidate = async (req, res) => {
+  const { id } = req.params;
+  const {
+    FirstName,
+    LastName,
+    Gender,
+    DateOfBirth,
+    PostId,
+    ExamDate,
+    PhoneNumber,
+    Marks,
+  } = req.body;
+
+  if (
+    !FirstName ||
+    !LastName ||
+    !Gender ||
+    !DateOfBirth ||
+    !PostId ||
+    !ExamDate ||
+    !PhoneNumber ||
+    Marks === undefined
+  ) {
+    return res.status(400).json({ error: "Please provide all required fields." });
+  }
+
+  try {
+    const [result] = await db.execute(
+      `UPDATE CandidatesResult SET 
+        FirstName = ?, 
+        LastName = ?, 
+        Gender = ?, 
+        DateOfBirth = ?, 
+        PostId = ?, 
+        ExamDate = ?, 
+        PhoneNumber = ?, 
+        Marks = ? 
+      WHERE CandidateNationalId = ?`,
+      [
+        FirstName,
+        LastName,
+        Gender,
+        DateOfBirth,
+        PostId,
+        ExamDate,
+        PhoneNumber,
+        Marks,
+        id,
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Candidate not found." });
+    }
+
+    res.json({ message: "Candidate updated successfully." });
+  } catch (error) {
+    console.error("Update Candidate Error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+// Delete candidate by CandidateNationalId
+exports.deleteCandidate = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [result] = await db.execute(
+      "DELETE FROM CandidatesResult WHERE CandidateNationalId = ?",
+      [id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Candidate not found." });
+    }
+
+    res.json({ message: "Candidate deleted successfully." });
+  } catch (error) {
+    console.error("Delete Candidate Error:", error);
+    res.status(500).json({ error: "Internal server error." });
+  }
+};
+
+
+//routes
+
+//authroutes.js
+
+const express = require("express");
+const router = express.Router();
+const authController = require("../controllers/authController");
+
+// Route to register a new user
+router.post("/register", authController.register);
+
+// Route to login
+router.post("/login", authController.login);
+
+// Route to check session
+router.get("/session", authController.getSession);
+
+// Route to logout
+router.post("/logout", authController.logout);
+
+router.post("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ message: "Logout failed." });
+    }
+    res.clearCookie("connect.sid");
+    res.json({ message: "Logout successful." });
+  });
+});
+
+
+module.exports = router;
+
+
+//candidateroute.js
+
+const express = require("express");
+const router = express.Router();
+const candidateController = require("../controllers/candidateController");
+
+// Create new candidate result
+router.post("/", candidateController.createCandidate);
+
+// Get all candidates sorted by Marks descending
+router.get("/", candidateController.getAllCandidates);
+
+// Get single candidate by CandidateNationalId
+router.get("/:id", candidateController.getCandidateById);
+
+// Update candidate by CandidateNationalId
+router.put("/:id", candidateController.updateCandidate);
+
+// Delete candidate by CandidateNationalId
+router.delete("/:id", candidateController.deleteCandidate);
+
+module.exports = router;
+
+//postroute.js
+
+const express = require("express");
+const router = express.Router();
+const postController = require("../controllers/postController");
+
+// Create new post
+router.post("/", postController.createPost);
+
+// Get all posts
+router.get("/", postController.getAllPosts);
+
+// Get single post by id
+router.get("/:id", postController.getPostById);
+
+// Update post by id
+router.put("/:id", postController.updatePost);
+
+// Delete post by id
+router.delete("/:id", postController.deletePost);
+
+module.exports = router;
+
+
+//dependencies neer to be installed
+├── bcrypt@6.0.0
+├── body-parser@2.2.0
+├── cors@2.8.5
+├── express-mysql-session@3.0.3
+├── express-session@1.18.1
+├── express@5.1.0
+└── mysql2@3.14.1
+
